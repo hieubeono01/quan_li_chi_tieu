@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "incremental": true,
+    "module": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx"
+, "app/(routes)/dashboard/_components/SideNav.jsx", "app/_components/Header.jsx", "components/ui/button.jsx", "app/(routes)/dashboard/budgets/_components/CreateBudget.tsx", "app/(routes)/dashboard/budgets/page.jsx", "app/(routes)/dashboard/budgets/_components/BudgetList.tsx", "app/(routes)/dashboard/expenses/[id]/page.jsx"  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
