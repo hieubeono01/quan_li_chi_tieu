@@ -18,7 +18,7 @@ function BudgetList() {
   }, [user]);
 
   // Lấy danh sách ví và thông tin liên quan từ Firestore
-  const getBudgetList = async () => {
+    const getBudgetList = async () => {
     try {
       const budgetsRef = collection(db, "budgets");
       const expensesRef = collection(db, "expenses");

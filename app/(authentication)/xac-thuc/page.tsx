@@ -107,7 +107,7 @@ const AuthenticationPage = () => {
       const uid = await setUserData(res.user); // Thực thi `setUserData`
       console.log("User logged in with UID:", uid);
       setHasLogged(true);
-      window.location.replace('/dashboard'); // Điều hướng khi thành công
+      window.location.replace("/dashboard/budgets"); // Điều hướng khi thành công
     } catch (error) {
       console.error("Đăng nhập thất bại:", error);
       // Hiển thị thông báo lỗi cho người dùng

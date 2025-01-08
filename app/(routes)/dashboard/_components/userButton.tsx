@@ -22,6 +22,7 @@ function UserButton() {
       .then(() => {
         console.log("Đăng xuất thành công");
         setAnchorEl(null);
+        window.location.replace("/xac-thuc");
       })
       .catch((error) => {
         console.error("Lỗi khi đăng xuất:", error);
