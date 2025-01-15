@@ -8,6 +8,8 @@ import { db } from "../../../../../firebase/client-config";
 import { collection, doc, setDoc } from "firebase/firestore"; // Import thêm doc và setDoc
 import { auth } from "../../../../../firebase/client-config";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useSnackbar } from "notistack";
+
 
 function CreateBudget({ onBudgetCreated }) {
   const [emoji, setEmoji] = useState("😲");
@@ -16,11 +18,16 @@ function CreateBudget({ onBudgetCreated }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState(0);
   const [user, loading, error] = useAuthState(auth);
+  const { enqueueSnackbar } = useSnackbar();
+  
 
   const onCreateBudget = async () => {
     try {
       if (!user) {
-        alert("Bạn cần đăng nhập để tạo ví!");
+        enqueueSnackbar("Bạn cần đăng nhập để tạo ví!", {
+          variant : "warning",
+          autoHideDuration: 1500
+        });
         return;
       }
       const budgetsRef = collection(db, "budgets");
@@ -41,6 +48,10 @@ function CreateBudget({ onBudgetCreated }) {
       // Thêm dữ liệu vào Firestore
       await setDoc(newDocRef, budgetData);
       console.log("Document successfully created with ID:", newId);
+      enqueueSnackbar("Đã tạo ví mới!", {
+        variant : "success",
+        autoHideDuration : 1500
+      });
 
       // Gọi callback để cập nhật danh sách
       if (onBudgetCreated) {
@@ -59,7 +70,10 @@ function CreateBudget({ onBudgetCreated }) {
       setOpenDialog(false); // Đóng popup
     } catch (error) {
       console.error("Error creating budget:", error);
-      alert("Có lỗi xảy ra khi tạo ví!");
+      enqueueSnackbar("Có lỗi xảy ra khi tạo ví!" , {
+        variant : "error",
+        autoHideDuration :1500
+      });
     }
   };
 

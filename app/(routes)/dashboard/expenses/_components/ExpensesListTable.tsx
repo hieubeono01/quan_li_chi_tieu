@@ -3,7 +3,7 @@ import { deleteDoc, doc } from 'firebase/firestore';
 import { TrashIcon } from 'lucide-react';
 import React from 'react'
 import { db } from '../../../../../firebase/client-config';
-import Alert from "@mui/material/Alert";
+import { useSnackbar } from "notistack";
 
 interface Expense {
   id: string;
@@ -18,11 +18,16 @@ interface ExpensesListTableProps {
 }
 
 const ExpensesListTable: React.FC<ExpensesListTableProps> = ({ expensesList, refreshData }) => {
+    const { enqueueSnackbar } = useSnackbar();
+
   const deleteExpense = async (expenses: Expense) => {
     try {
       const expenseDocRef = doc(db, "expenses", expenses.id);
       await deleteDoc(expenseDocRef);
-      <Alert severity="success">Xóa thành công</Alert>;
+      enqueueSnackbar('Xóa thành công', {
+        variant : "success",
+        autoHideDuration : 1500
+      })
       console.log(`Expense with id ${expenses.id} deleted successfully`);
       refreshData();
     } catch (error) {

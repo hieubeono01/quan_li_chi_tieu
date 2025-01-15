@@ -5,17 +5,23 @@ import { collection, addDoc, doc } from "firebase/firestore"; // Thêm import do
 import { db } from "../../../../../firebase/client-config";
 import { set } from "zod";
 import { Loader } from "lucide-react";
+import { useSnackbar } from "notistack";
 
 function AddExpense({ budgetId, user , onExpenseAdded }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+
 
   const addNewExpense = async () => {
     setLoading(true);
     try {
       if (!user) {
-        alert("Bạn cần đăng nhập để tạo chi phí!");
+        enqueueSnackbar("Bạn phải đăng nhập", {
+          variant: "error",
+          autoHideDuration: 1500,
+        });
         return;
       }
 
@@ -37,7 +43,10 @@ function AddExpense({ budgetId, user , onExpenseAdded }) {
       setName("");
       setAmount(0);
 
-      alert("Tạo chi phí thành công!");
+      enqueueSnackbar("Tạo chi phí thành công!", {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
       // Đảm bảo gọi onExpenseAdded để cập nhật lại dữ liệu
       if (onExpenseAdded) {
         setLoading(false);
@@ -46,7 +55,10 @@ function AddExpense({ budgetId, user , onExpenseAdded }) {
       setLoading(false);
     } catch (error) {
       console.error("Error creating expenses:", error);
-      alert("Có lỗi xảy ra khi tạo chi phí!");
+      enqueueSnackbar("Có lỗi xảy ra khi tạo chi phí!", {
+        variant: "error",
+        autoHideDuration: 1500,
+      });
     }
   };
 

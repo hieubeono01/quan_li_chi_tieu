@@ -49,6 +49,7 @@ const SocialBox = styled(Box)(({ theme }) => ({
 const AuthenticationPage = () => {
   const [hasLogged, setHasLogged] = useState(false);
   const [user, loading, error] = useAuthState(auth);
+  const { enqueueSnackbar } = useSnackbar();
 
   const searchParams = useSearchParams();
   const getQueryParams = () => {
@@ -71,10 +72,17 @@ const AuthenticationPage = () => {
       }
 
       const uid = await setUserData(res.user); // Thực thi `setUserData`
-      console.log("User logged in with UID:", uid);
+      enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
       setHasLogged(true);
       window.location.replace('/dashboard'); // Điều hướng khi thành công
     } catch (error) {
+      enqueueSnackbar("Đã xảy ra lỗi. Vui lòng thử lại sau.", {
+        variant: "error",
+        autoHideDuration: 1500,
+      });
       console.error("Đăng nhập thất bại:", error);
       // Hiển thị thông báo lỗi cho người dùng
     }
@@ -105,12 +113,19 @@ const AuthenticationPage = () => {
       }
 
       const uid = await setUserData(res.user); // Thực thi `setUserData`
+      enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
       console.log("User logged in with UID:", uid);
       setHasLogged(true);
       window.location.replace("/dashboard/budgets"); // Điều hướng khi thành công
     } catch (error) {
+      enqueueSnackbar("Đã xảy ra lỗi. Vui lòng thử lại sau.", {
+        variant: "error",
+        autoHideDuration: 1500,
+      });
       console.error("Đăng nhập thất bại:", error);
-      // Hiển thị thông báo lỗi cho người dùng
     }
   });
 

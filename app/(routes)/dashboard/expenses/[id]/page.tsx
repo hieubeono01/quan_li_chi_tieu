@@ -118,7 +118,6 @@ function ExpensesScreen({ params }) {
         <AddExpense budgetId={params.id} user={user} onExpenseAdded={refreshData} />
       </div>
       <div className="">
-        <h2 className="font-bold text-lg">Chi phí mới nhất</h2>
         <ExpensesListTable expensesList={expensesList} refreshData={refreshData} />
       </div>
     </div>
