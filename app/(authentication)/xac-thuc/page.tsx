@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useRedirect } from "../../../lib/useRedirect";
 import { exitInAppBrowser } from "../../../lib/utils";
-import { facebookAuth, googleAuth, setUserData } from "../../../services/auth.service";
+import { auth } from "../../../firebase/client-config";
+import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
 import { Google, Phone } from "@mui/icons-material";
 import FacebookOutlinedIcon from "@mui/icons-material/FacebookOutlined";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
@@ -10,13 +11,11 @@ import { styled } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { enqueueSnackbar } from "notistack";
 import { useLoadingCallback } from "react-loading-hook";
 import Image from "next/image";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../../../firebase/client-config";
 
-// Styling for Social Button and Box
+// Styling components remain the same
 const SocialButton = styled(Button)(({ theme }) => ({
   lineHeight: "26px",
   fontSize: "14px",
@@ -45,89 +44,74 @@ const SocialBox = styled(Box)(({ theme }) => ({
   cursor: "pointer",
 }));
 
-
-const AuthenticationPage = () => {
-  const [hasLogged, setHasLogged] = useState(false);
-  const [user, loading, error] = useAuthState(auth);
+// Separate component for the auth content
+const AuthContent = () => {
+  const [user, loading] = useAuthState(auth);
   const { enqueueSnackbar } = useSnackbar();
-
   const searchParams = useSearchParams();
+
   const getQueryParams = () => {
-    const queryParamString = new URLSearchParams(searchParams).toString();
-    return queryParamString;
+    return searchParams ? searchParams.toString() : "";
   };
+
   useEffect(() => {
-    let url = `${window.location.origin}/xac-thuc?${getQueryParams()}`;
-    exitInAppBrowser(url);
-  }, []);
-  // const refID = searchParams?.get("refID");
+    if (typeof window !== "undefined") {
+      let url = `${window.location.origin}/xac-thuc?${getQueryParams()}`;
+      exitInAppBrowser(url);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user) {
+      window.location.replace("/dashboard");
+    }
+  }, [user]);
+
   useRedirect();
-  console.log(user)
-  const [handleLoginWithGoogle, isGoogleLoading, googleError] = useLoadingCallback(async () => {
-    try {
-      setHasLogged(false);
-      const res = await googleAuth(); // Kết quả trả về từ googleAuth
-      if (!res?.user) {
-        throw new Error("Không nhận được thông tin người dùng");
-      }
 
-      const uid = await setUserData(res.user); // Thực thi `setUserData`
-      enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
-        variant: "success",
-        autoHideDuration: 1500,
-      });
-      setHasLogged(true);
-      window.location.replace('/dashboard'); // Điều hướng khi thành công
+  const [handleLoginWithGoogle, isGoogleLoading] = useLoadingCallback(async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+
+      if (result.user) {
+        enqueueSnackbar("Đăng nhập thành công!", {
+          variant: "success",
+          autoHideDuration: 1500,
+        });
+      }
     } catch (error) {
-      enqueueSnackbar("Đã xảy ra lỗi. Vui lòng thử lại sau.", {
+      console.error("Google login error:", error);
+      enqueueSnackbar("Đăng nhập thất bại. Vui lòng thử lại.", {
         variant: "error",
         autoHideDuration: 1500,
       });
-      console.error("Đăng nhập thất bại:", error);
-      // Hiển thị thông báo lỗi cho người dùng
     }
   });
 
-  const [handleLoginWithFacebook, isFacebookLoading, facebookError] = useLoadingCallback(async () => {
-    // setHasLogged(false);
-    // facebookAuth()
-    //   .then((res) => {
-    //     setHasLogged(true);
-    //     // enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
-    //     //   variant: "success",
-    //     //   autoHideDuration: 1500,
-    //     // });
-    //     // window.location.replace('/thong-tin-tai-khoan');
-    //   })
-    //   .catch((error) => {
-    //     // enqueueSnackbar("Đã xảy ra lỗi. Vui lòng thử lại sau.", {
-    //     //   variant: "error",
-    //     //   autoHideDuration: 1500,
-    //     // });
-    //   });
+  const [handleLoginWithFacebook, isFacebookLoading] = useLoadingCallback(async () => {
     try {
-      setHasLogged(false);
-      const res = await facebookAuth(); // Kết quả trả về từ facebookAuth
-      if (!res?.user) {
-        throw new Error("Không nhận được thông tin người dùng");
-      }
+      const provider = new FacebookAuthProvider();
+      const result = await signInWithPopup(auth, provider);
 
-      const uid = await setUserData(res.user); // Thực thi `setUserData`
-      enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
-        variant: "success",
-        autoHideDuration: 1500,
-      });
-      console.log("User logged in with UID:", uid);
-      setHasLogged(true);
-      window.location.replace("/dashboard/budgets"); // Điều hướng khi thành công
+      if (result.user) {
+        enqueueSnackbar("Đăng nhập thành công!", {
+          variant: "success",
+          autoHideDuration: 1500,
+        });
+      }
     } catch (error) {
-      enqueueSnackbar("Đã xảy ra lỗi. Vui lòng thử lại sau.", {
+      console.error("Facebook login error:", error);
+      enqueueSnackbar("Đăng nhập thất bại. Vui lòng thử lại.", {
         variant: "error",
         autoHideDuration: 1500,
       });
-      console.error("Đăng nhập thất bại:", error);
     }
   });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Stack direction="column" justifyContent="space-between" alignItems="stretch" spacing={2} height={"100vh"}>
@@ -160,19 +144,19 @@ const AuthenticationPage = () => {
             </Typography>
           </Typography>
           <Stack gap={"9px"} mb={"30px"}>
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={isFacebookLoading || hasLogged} onClick={handleLoginWithFacebook}>
+            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={isFacebookLoading || loading} onClick={handleLoginWithFacebook}>
               <SocialBox>
                 <FacebookOutlinedIcon />
               </SocialBox>
               <Typography>Facebook</Typography>
             </SocialButton>
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#DB4B40" }} disabled={isGoogleLoading || hasLogged} onClick={handleLoginWithGoogle}>
+            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#DB4B40" }} disabled={isGoogleLoading || loading} onClick={handleLoginWithGoogle}>
               <SocialBox>
                 <Google />
               </SocialBox>
               <Typography>Google</Typography>
             </SocialButton>
-            <SocialButton href={`/xac-thuc-so-dien-thoai?${getQueryParams()}`} variant="contained" LinkComponent={Link} disabled={hasLogged} size="large" sx={{ backgroundColor: "#2F9D9A" }}>
+            <SocialButton href={`/xac-thuc-so-dien-thoai?${getQueryParams()}`} variant="contained" LinkComponent={Link} disabled={loading} size="large" sx={{ backgroundColor: "#2F9D9A" }}>
               <SocialBox>
                 <Phone />
               </SocialBox>
@@ -182,6 +166,15 @@ const AuthenticationPage = () => {
         </Container>
       </Box>
     </Stack>
+  );
+};
+
+// Main component with Suspense boundary
+const AuthenticationPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthContent />
+    </Suspense>
   );
 };
 

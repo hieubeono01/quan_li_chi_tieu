@@ -1,15 +1,16 @@
 "use client";
-import { Box, Button, FormControl, Stack, TextField, Typography, styled } from "@mui/material";
+import React, { Suspense } from "react";
+import { Box, Button, FormControl, Stack, TextField, Typography } from "@mui/material";
 import KeyboardBackspaceOutlinedIcon from "@mui/icons-material/KeyboardBackspaceOutlined";
 import Link from "next/link";
 import { z } from "zod";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { phoneAuth } from "../../../services/auth.service";
 import { ConfirmationResult } from "firebase/auth";
-import { useSearchParams } from "next/navigation";
 import { LoadingButton } from "@mui/lab";
 import { useRedirect } from "../../../lib/useRedirect";
 import { enqueueSnackbar } from "notistack";
+
 const schemaPhone = z.object({
   phoneNumber: z
     .string({
@@ -18,22 +19,29 @@ const schemaPhone = z.object({
     })
     .regex(/^(0|\+84|84)[1-9]{1}[0-9]{8,9}$/, "Số điện thoại không hợp lệ"),
 });
+
 const schemaOtp = z.object({
   otp: z.string({ required_error: "Vui lòng nhập OTP", invalid_type_error: "Vui lòng nhập OTP" }).regex(/^\d{6}$/, "Mã OTP không hợp lệ"),
 });
 
-const SignInPhonePage = () => {
+// Separate component for the authentication content
+const PhoneAuthContent = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
-  const searchParams = useSearchParams();
   const [otp, setOTP] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
   useRedirect();
+
+  // Handle query params on the client side
   const getQueryParams = () => {
-    const queryParamString = new URLSearchParams(searchParams).toString();
-    return queryParamString;
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).toString();
+    }
+    return "";
   };
+
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -61,17 +69,18 @@ const SignInPhonePage = () => {
               break;
             }
             default: {
-              setError(error?.messsage);
+              setError(error?.message);
               break;
             }
           }
           setLoading(false);
         });
     } catch (error: any) {
-      setError(error?.messsage);
+      setError(error?.message);
       setLoading(false);
     }
   };
+
   const confirmOtp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -82,13 +91,6 @@ const SignInPhonePage = () => {
       confirmationResult
         .confirm(otp)
         .then(async (result) => {
-          // let refID: any = searchParams?.get('refID');
-          // if (!refID?.length) {
-          //     refID = null;
-          // }
-          // await setUserData(result.user,refID);
-          // window.location.reload();
-          // setLoading(false);
           enqueueSnackbar("Hệ thống đang xác thực. Vui lòng chờ trong giây lát.", {
             variant: "success",
             autoHideDuration: 1500,
@@ -97,7 +99,10 @@ const SignInPhonePage = () => {
         .catch((error) => {
           switch (error.code) {
             case "auth/invalid-verification-code": {
-              enqueueSnackbar("Mã OTP không hợp lệ.", { variant: "error", autoHideDuration: 1500 });
+              enqueueSnackbar("Mã OTP không hợp lệ.", {
+                variant: "error",
+                autoHideDuration: 1500,
+              });
               break;
             }
             case "auth/code-expired": {
@@ -118,6 +123,7 @@ const SignInPhonePage = () => {
       setLoading(false);
     }
   };
+
   const handleChangePhoneNumber = (event: any) => {
     try {
       const phoneNumber = event.target?.value;
@@ -128,6 +134,7 @@ const SignInPhonePage = () => {
       setError(error.message);
     }
   };
+
   const handleChangeOtp = (event: any) => {
     try {
       const otp = event.target?.value;
@@ -138,6 +145,7 @@ const SignInPhonePage = () => {
       setError(error.message);
     }
   };
+
   return (
     <>
       <div id="recaptcha-container" style={{ position: "fixed", top: "-99999px", left: "-99999px" }}></div>
@@ -228,6 +236,15 @@ const SignInPhonePage = () => {
         </>
       )}
     </>
+  );
+};
+
+// Main component with Suspense boundary
+const SignInPhonePage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PhoneAuthContent />
+    </Suspense>
   );
 };
 
