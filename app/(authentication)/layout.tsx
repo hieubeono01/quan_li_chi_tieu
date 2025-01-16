@@ -7,13 +7,13 @@ export default function AuthenticationLayout({ children }: { children: React.Rea
       <Box overflow={"auto"} component="section" sx={{ flex: 1, marginTop: "0 !important" }}>
         <Container maxWidth={"xl"}>
           <Box mt={"17px"} mb={"34px"}>
-            <Typography noWrap component="a" href="#app-bar-with-responsive-menu">
+            {/* <Typography noWrap component="a" href="#app-bar-with-responsive-menu">
               <Image className="logo" src="/img/logo.svg?v=101" alt="Logo" width={140} height={60} />
-            </Typography>
+            </Typography> */}
           </Box>
-          <Box component={"section"} textAlign={"center"} mb={"13px"}>
+          {/* <Box component={"section"} textAlign={"center"} mb={"13px"}>
             <Image src={"/img/robot.svg"} width={54} height={81.31} alt="Robot" />
-          </Box>
+          </Box> */}
           {children}
         </Container>
       </Box>

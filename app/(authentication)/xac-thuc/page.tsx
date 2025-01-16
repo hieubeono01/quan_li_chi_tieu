@@ -1,21 +1,15 @@
 "use client";
-import React, { Suspense, useEffect } from "react";
-import { useRedirect } from "../../../lib/useRedirect";
-import { exitInAppBrowser } from "../../../lib/utils";
-import { auth } from "../../../firebase/client-config";
-import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+import { Box, Button, Stack, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { Google, Phone } from "@mui/icons-material";
 import FacebookOutlinedIcon from "@mui/icons-material/FacebookOutlined";
-import { Box, Button, Container, Stack, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { useSnackbar } from "notistack";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { enqueueSnackbar, useSnackbar } from "notistack";
+import { useState } from "react";
 import { useLoadingCallback } from "react-loading-hook";
-import Image from "next/image";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+import { auth } from "../../../firebase/client-config"; // Đảm bảo import đúng đường dẫn tới firebase config
 
-// Styling components remain the same
 const SocialButton = styled(Button)(({ theme }) => ({
   lineHeight: "26px",
   fontSize: "14px",
@@ -44,44 +38,23 @@ const SocialBox = styled(Box)(({ theme }) => ({
   cursor: "pointer",
 }));
 
-// Separate component for the auth content
-const AuthContent = () => {
-  const [user, loading] = useAuthState(auth);
+const AuthenticationPage = () => {
+  const [hasLogged, setHasLogged] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
-  const searchParams = useSearchParams();
-
-  const getQueryParams = () => {
-    return searchParams ? searchParams.toString() : "";
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      let url = `${window.location.origin}/xac-thuc?${getQueryParams()}`;
-      exitInAppBrowser(url);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (user) {
-      window.location.replace("/dashboard");
-    }
-  }, [user]);
-
-  useRedirect();
 
   const [handleLoginWithGoogle, isGoogleLoading] = useLoadingCallback(async () => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-
-      if (result.user) {
-        enqueueSnackbar("Đăng nhập thành công!", {
-          variant: "success",
-          autoHideDuration: 1500,
-        });
-      }
+      setHasLogged(true);
+      enqueueSnackbar("Đăng nhập thành công!", {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
+      // Có thể chuyển hướng người dùng sau khi đăng nhập thành công
+      window.location.replace('/dashboard');
     } catch (error) {
-      console.error("Google login error:", error);
+      console.error(error);
       enqueueSnackbar("Đăng nhập thất bại. Vui lòng thử lại.", {
         variant: "error",
         autoHideDuration: 1500,
@@ -93,15 +66,15 @@ const AuthContent = () => {
     try {
       const provider = new FacebookAuthProvider();
       const result = await signInWithPopup(auth, provider);
-
-      if (result.user) {
-        enqueueSnackbar("Đăng nhập thành công!", {
-          variant: "success",
-          autoHideDuration: 1500,
-        });
-      }
+      setHasLogged(true);
+      enqueueSnackbar("Đăng nhập thành công!", {
+        variant: "success",
+        autoHideDuration: 1500,
+      });
+      // Có thể chuyển hướng người dùng sau khi đăng nhập thành công
+      window.location.replace('/dashboard');
     } catch (error) {
-      console.error("Facebook login error:", error);
+      console.error(error);
       enqueueSnackbar("Đăng nhập thất bại. Vui lòng thử lại.", {
         variant: "error",
         autoHideDuration: 1500,
@@ -109,72 +82,47 @@ const AuthContent = () => {
     }
   });
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <Stack direction="column" justifyContent="space-between" alignItems="stretch" spacing={2} height={"100vh"}>
-      <Box overflow={"auto"} component="section" sx={{ flex: 1, marginTop: "0 !important" }}>
-        <Container maxWidth={"xl"}>
-          <Box mt={"17px"} mb={"34px"}>
-            <Typography noWrap component="a" href="#app-bar-with-responsive-menu">
-              <Image className="logo" src="/logo.png" alt="Logo" width={140} height={60} />
-            </Typography>
-          </Box>
-          <Box component={"section"} textAlign={"center"} mb={"13px"} justifyItems={"center"}>
-            <Image src={"/logo.png"} width={54} height={81.31} alt="Robot" />
-          </Box>
-          <Box textAlign={"center"} fontWeight={700} lineHeight={"27.45px"} mb={"16px"}>
-            <Typography component={"h1"} textTransform={"uppercase"} color={"#FFA600"} fontSize={"15px"} lineHeight={"18px"} mb={"6px"}>
-              Bạn chưa đăng nhập
-            </Typography>
-            <Typography color={"#AFC536"} fontSize={"23px"}>
-              Tạo Tài khoản mới hoặc Đăng nhập
-            </Typography>
-          </Box>
-          <Typography fontSize={"13px"} lineHeight={"15.51px"} mb={"35px"} color={"#535353"}>
-            Bằng việc{" "}
-            <Typography component={"span"} color={"#AFC536"}>
-              Tạo Tài khoản mới hoặc Đăng nhập
-            </Typography>
-            , bạn đã đồng ý với{" "}
-            <Typography href={""} component={"a"} color="primary">
-              Điều khoản người dùng
-            </Typography>
-          </Typography>
-          <Stack gap={"9px"} mb={"30px"}>
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={isFacebookLoading || loading} onClick={handleLoginWithFacebook}>
-              <SocialBox>
-                <FacebookOutlinedIcon />
-              </SocialBox>
-              <Typography>Facebook</Typography>
-            </SocialButton>
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#DB4B40" }} disabled={isGoogleLoading || loading} onClick={handleLoginWithGoogle}>
-              <SocialBox>
-                <Google />
-              </SocialBox>
-              <Typography>Google</Typography>
-            </SocialButton>
-            <SocialButton href={`/xac-thuc-so-dien-thoai?${getQueryParams()}`} variant="contained" LinkComponent={Link} disabled={loading} size="large" sx={{ backgroundColor: "#2F9D9A" }}>
-              <SocialBox>
-                <Phone />
-              </SocialBox>
-              <Typography>Số điện thoại</Typography>
-            </SocialButton>
-          </Stack>
-        </Container>
+    <>
+      <Box textAlign={"center"} fontWeight={700} lineHeight={"27.45px"} mb={"16px"}>
+        <Typography component={"h1"} textTransform={"uppercase"} color={"#FFA600"} fontSize={"15px"} lineHeight={"18px"} mb={"6px"}>
+          Bạn chưa đăng nhập
+        </Typography>
+        <Typography color={"#AFC536"} fontSize={"23px"}>
+          Tạo Tài khoản mới hoặc Đăng nhập
+        </Typography>
       </Box>
-    </Stack>
-  );
-};
-
-// Main component with Suspense boundary
-const AuthenticationPage = () => {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <AuthContent />
-    </Suspense>
+      <Typography fontSize={"13px"} lineHeight={"15.51px"} mb={"35px"} color={"#535353"}>
+        Bằng việc{" "}
+        <Typography component={"span"} color={"#AFC536"}>
+          Tạo Tài khoản mới hoặc Đăng nhập
+        </Typography>
+        , bạn đã đồng ý với{" "}
+        <Typography href={""} component={"a"} color="primary">
+          Điều khoản người dùng
+        </Typography>
+      </Typography>
+      <Stack gap={"9px"} mb={"30px"}>
+        <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={isFacebookLoading || hasLogged} onClick={handleLoginWithFacebook}>
+          <SocialBox>
+            <FacebookOutlinedIcon />
+          </SocialBox>
+          <Typography>Facebook</Typography>
+        </SocialButton>
+        <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#DB4B40" }} disabled={isGoogleLoading || hasLogged} onClick={handleLoginWithGoogle}>
+          <SocialBox>
+            <Google />
+          </SocialBox>
+          <Typography>Google</Typography>
+        </SocialButton>
+        <SocialButton href="/xac-thuc-so-dien-thoai" variant="contained" LinkComponent={Link} disabled={hasLogged} size="large" sx={{ backgroundColor: "#2F9D9A" }}>
+          <SocialBox>
+            <Phone />
+          </SocialBox>
+          <Typography>Số điện thoại</Typography>
+        </SocialButton>
+      </Stack>
+    </>
   );
 };
 
