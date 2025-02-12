@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
 import React, { useEffect } from 'react'
-import {LayoutGrid, PiggyBank, ReceiptText, ShieldCheck} from 'lucide-react'
+import {LayoutGrid, PiggyBank, ReceiptText, ShieldCheck, Wallet} from 'lucide-react'
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import UserButton from './userButton';
@@ -15,21 +15,27 @@ function SideNav() {
       },
       {
         id: 2,
-        name: "Ngan Sach",
-        icon: PiggyBank,
-        path: "/dashboard/budgets",
+        name: "Thu nhập",
+        icon: Wallet,
+        path: "/dashboard/thu-nhap",
       },
       {
         id: 3,
-        name: "Chi Phi",
-        icon: ReceiptText,
-        path: "/dashboard/expenses",
+        name: "Ngan Sach",
+        icon: PiggyBank,
+        path: "/dashboard/ngan-sach",
       },
       {
         id: 4,
+        name: "Chi Phi",
+        icon: ReceiptText,
+        path: "/dashboard/chi-phi",
+      },
+      {
+        id: 5,
         name: "Nang Cap",
         icon: ShieldCheck,
-        path: "/dashboard/upgrade",
+        path: "/dashboard/thanh-toan",
       },
     ];
     const path =usePathname(); 

@@ -34,7 +34,12 @@ const ExpensesListTable: React.FC<ExpensesListTableProps> = ({ expensesList, ref
       console.error("Error deleting expense: ", error);
     }
   };
-
+  const formatCurrency = (amount: number): string => {
+    return amount?.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    });
+  };
   return (
     <div className="mt-3">
       <h2 className='font-bold text-lg'>Chi phí mới nhất</h2>
@@ -47,7 +52,7 @@ const ExpensesListTable: React.FC<ExpensesListTableProps> = ({ expensesList, ref
       {expensesList.map((expenses, index) => (
         <div key={index} className="grid grid-cols-4 p-2">
           <h2>{expenses.name}</h2>
-          <h2>{expenses.amount}</h2>
+          <h2>{formatCurrency(expenses.amount)}</h2>
           <h2>{format(new Date(expenses.createdAt), "dd/MM/yyyy HH:mm:ss")}</h2>
           <h2>
             <TrashIcon className="w-5 h-5 text-red-500 cursor-pointer" onClick={() => deleteExpense(expenses)} />

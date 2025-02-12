@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { auth, db } from "../../../../../firebase/client-config";
 import { collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import BudgetItem from "../../budgets/_components/BudgetItem";
+import BudgetItem from "../../ngan-sach/_components/BudgetItem";
 import AddExpense from "../_components/AddExpense";
 import ExpensesListTable from "../_components/ExpensesListTable";
 // import { Button } from "../../../../../components/ui/button";

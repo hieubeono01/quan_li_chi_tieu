@@ -4,7 +4,7 @@ import BudgetList from './_components/BudgetList'
 function Budget() {
   return (
     <div className='p-10'>
-      <BudgetList/>
+      <BudgetList jarId={""}/>
     </div>
   )
 }

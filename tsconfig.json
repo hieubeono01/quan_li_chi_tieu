@@ -27,7 +27,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "app/(routes)/dashboard/_components/SideNav.jsx", "app/_components/Header.jsx", "components/ui/button.jsx", "app/(routes)/dashboard/budgets/_components/CreateBudget.tsx", "app/(routes)/dashboard/budgets/page.jsx", "app/(routes)/dashboard/budgets/_components/BudgetList.tsx", "app/(routes)/dashboard/expenses/[id]/page.tsx", "app/(routes)/dashboard/expenses/_components/AddExpense.jsx", "app/(routes)/dashboard/expenses/_components/EditBudget.jsx", "app/(routes)/dashboard/_components/CardInfo.tsx"  ],
+, "app/(routes)/dashboard/_components/SideNav.jsx", "app/_components/Header.jsx", "components/ui/button.jsx", "app/(routes)/dashboard/ngan-sach/_components/CreateBudget.tsx", "app/(routes)/dashboard/ngan-sach/page.jsx", "app/(routes)/dashboard/ngan-sach/_components/BudgetList.tsx", "app/(routes)/dashboard/chi-phi/[id]/page.tsx", "app/(routes)/dashboard/chi-phi/_components/AddExpense.jsx", "app/(routes)/dashboard/chi-phi/_components/EditBudget.jsx", "app/(routes)/dashboard/_components/CardInfo.tsx"  ],
   "exclude": [
     "node_modules"
   ]

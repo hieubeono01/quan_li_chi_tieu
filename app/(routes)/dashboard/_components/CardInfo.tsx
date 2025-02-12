@@ -7,7 +7,12 @@ function CardInfo({budgetList}) {
   useEffect(() => {
     budgetList && CaculateCardInfo();
   }, [budgetList]);
-
+  const formatCurrency = (amount: number): string => {
+    return amount?.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    });
+  };
   const CaculateCardInfo = () => {
     console.log(budgetList);
     let totalBudget_ = 0;
@@ -27,14 +32,14 @@ function CardInfo({budgetList}) {
           <div className="p-7 border rounded-lg flex justify-between items-center">
             <div className="">
               <h2 className="text-sm">Ngân sách</h2>
-              <h2 className="font-bold text-2xl">{totalBudget} VND</h2>
+              <h2 className="font-bold text-2xl">{formatCurrency(totalBudget)}</h2>
             </div>
             <PiggyBank className="bg-primary p-3 h-12 w-12 rounded-full text-white" />
           </div>
           <div className="p-7 border rounded-lg flex justify-between items-center">
             <div className="">
               <h2 className="text-sm">Chi tiêu</h2>
-              <h2 className="font-bold text-2xl">{totalSpend} VND</h2>
+              <h2 className="font-bold text-2xl">{formatCurrency(totalSpend)}</h2>
             </div>
             <ReceiptText className="bg-primary p-3 h-12 w-12 rounded-full text-white" />
           </div>
