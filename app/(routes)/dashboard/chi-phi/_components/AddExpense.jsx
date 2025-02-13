@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+'use client'
+import React, { useEffect, useState } from "react";
 import { Input } from "../../../../../@/components/ui/input";
 import { Button } from "../../../../../components/ui/button";
 import { collection, addDoc, doc } from "firebase/firestore"; // Thêm import doc
@@ -12,6 +13,13 @@ function AddExpense({ budgetId, user , onExpenseAdded }) {
   const [amount, setAmount] = useState();
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const [incomeId, setIncomeId] = useState("");
+    useEffect(() => {
+      const storedIncomeId = localStorage.getItem("incomeId");
+      if (storedIncomeId) {
+        setIncomeId(storedIncomeId);
+      }
+    }, []);
 
 
   const addNewExpense = async () => {
@@ -33,6 +41,7 @@ function AddExpense({ budgetId, user , onExpenseAdded }) {
         amount: parseFloat(amount),
         createdBy: user.displayName || "Ẩn danh",
         budgetId: budgetId,
+        incomeId : incomeId,
         createdAt: new Date().toISOString(),
       };
 

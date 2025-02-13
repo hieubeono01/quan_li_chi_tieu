@@ -11,6 +11,7 @@ import ExpensesListTable from "./chi-phi/_components/ExpensesListTable";
 // import IncomeChart from "../../_components/incomeCharts";
 import dynamic from "next/dynamic";
 import { Stack } from "@mui/material";
+import { useTheme } from "../../_context/ThemeContext";
 
 
 const IncomeChart = dynamic(() => import("../../_components/incomeCharts"), { ssr: false });
@@ -19,6 +20,14 @@ function Dashboard() {
   const [budgetList, setBudgetList] = useState([]);
   const [expensesList, setExpensesList] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
+  const { isDarkMode } = useTheme();
+  const [incomeId, setIncomeId] = useState("");
+    useEffect(() => {
+      const storedIncomeId = localStorage.getItem("incomeId");
+      if (storedIncomeId) {
+        setIncomeId(storedIncomeId);
+      }
+    }, []);
 
 
   useEffect(() => {
@@ -74,7 +83,7 @@ function Dashboard() {
       const budgetsRef = collection(db, "budgets");
       const expensesRef = collection(db, "expenses");
 
-      const budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid));
+      const budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid), where("incomeId", "==", incomeId));
       const budgetsSnapshot = await getDocs(budgetsQuery);
 
       const budgets = budgetsSnapshot.docs.map((doc) => ({
@@ -110,7 +119,7 @@ function Dashboard() {
       const expensesRef = collection(db, "expenses");
 
       // Query với createdBy
-      const q = query(expensesRef, where("createdBy", "==", user.displayName), orderBy("createdAt", "desc"));
+      const q = query(expensesRef, where("createdBy", "==", user.displayName), where("incomeId", "==", incomeId));
 
       const expensesSnapshot = await getDocs(q);
 
@@ -133,26 +142,36 @@ function Dashboard() {
     }
   };
   return (
-    <div className="p-5">
-      <h2 className="font-bold text-3xl">Xin chào, {user ? user.displayName : "Guest"}</h2>
+    <div className={`p-5 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} min-h-screen transition-colors duration-200`}>
+      <h2 className={`font-bold text-3xl mb-6 ${isDarkMode ? "text-white" : "text-gray-900"}`}>Xin chào, {user ? user.displayName : "Guest"}</h2>
+
       <CardInfo budgetList={budgetList} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
         {/* Cột bên trái (chiếm 2/3 trên màn hình lớn) */}
-        <div className="md:col-span-2 space-y-6">
-          <BarChartDashboard budgetList={budgetList} />
-          <ExpensesListTable expensesList={expensesList} refreshData={() => getBudgetList} />
-          <div>
-            <h2 className="font-bold text-lg">Thống kê thu nhập</h2>
+        <div className={`md:col-span-2 space-y-6 ${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>
+          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+            <BarChartDashboard budgetList={budgetList} />
+          </div>
+
+          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+            <ExpensesListTable expensesList={expensesList} refreshData={() => getBudgetList} />
+          </div>
+
+          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+            <h2 className={`font-bold text-lg mb-4 ${isDarkMode ? "text-white" : "text-gray-900"}`}>Thống kê thu nhập</h2>
             <IncomeChart data={incomeData} />
           </div>
         </div>
 
         {/* Cột bên phải (chiếm 1/3 trên màn hình lớn) */}
-        <div className="space-y-5">
-          <h2 className="font-bold text-lg">Ví mới nhất</h2>
+        <div className={`space-y-5 ${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>
+          <h2 className={`font-bold text-lg ${isDarkMode ? "text-white" : "text-gray-900"}`}>Ví mới nhất</h2>
           <div className="grid gap-5">
             {budgetList.map((budget, index) => (
-              <BudgetItem key={index} budget={budget} />
+              <div key={index} className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+                <BudgetItem budget={budget} />
+              </div>
             ))}
           </div>
         </div>

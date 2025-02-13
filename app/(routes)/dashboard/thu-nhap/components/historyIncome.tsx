@@ -1,42 +1,64 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, Typography, TextField, Button, Grid, Box, Container, Paper } from "@mui/material";
-import { collection, addDoc, getDocs, query, where, Timestamp, QueryDocumentSnapshot, writeBatch } from "firebase/firestore";
+import { Card, CardContent, Typography, Button, Box, Paper } from "@mui/material";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { auth, db } from "../../../../../firebase/client-config";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useRouter } from "next/navigation";
-import { enqueueSnackbar, useSnackbar } from "notistack";
-import { Jar, IncomeEntry } from "../type";
+import { enqueueSnackbar } from "notistack";
+import { Timestamp } from "firebase/firestore";
+
+interface MonthlyRecord {
+  id: string;
+  month: number;
+  year: number;
+  totalIncome: number;
+  jars: {
+    id: string;
+    name: string;
+    percentage: number;
+    totalAmount: number;
+    spent: number;
+  }[];
+  createdAt: Timestamp;
+}
 
 const HistoryIncome: React.FC = () => {
-  const [allMonthlyIncomeRecords, setAllMonthlyIncomeRecords] = useState<IncomeEntry[]>([]);
+  const [allMonthlyRecords, setAllMonthlyRecords] = useState<MonthlyRecord[]>([]);
   const [showAllRecords, setShowAllRecords] = useState<boolean>(false);
   const [user] = useAuthState(auth);
-  const [incomeHistory, setIncomeHistory] = useState<IncomeEntry[]>([]);
 
-  const fetchAllMonthlyIncomeRecords = async () => {
+  // Fetch tất cả bản ghi lịch sử hàng tháng
+  const fetchAllMonthlyRecords = async () => {
     if (!user?.uid) return;
 
     try {
-      const q = query(collection(db, "monthly_income_records"), where("userId", "==", user.uid));
+      const q = query(collection(db, `users/${user.uid}/monthlyHistory`));
       const querySnapshot = await getDocs(q);
-      const allRecords: IncomeEntry[] = [];
+      const records: MonthlyRecord[] = [];
 
-      querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
-        const data = doc.data() as Omit<IncomeEntry, "id">;
-        const entry: IncomeEntry = { id: doc.id, ...data };
-        allRecords.push(entry);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        records.push({
+          id: doc.id,
+          month: data.month,
+          year: data.year,
+          totalIncome: data.totalIncome,
+          jars: data.jars,
+          createdAt: data.createdAt,
+        });
       });
 
-      setAllMonthlyIncomeRecords(allRecords);
+      setAllMonthlyRecords(records);
       setShowAllRecords(true);
     } catch (error) {
-      console.error("Error fetching all monthly income records:", error);
-      enqueueSnackbar("Lỗi khi lấy lịch sử thu nhập từ tất cả các tháng!", {
+      console.error("Error fetching monthly records:", error);
+      enqueueSnackbar("Lỗi khi lấy lịch sử hàng tháng!", {
         variant: "error",
         autoHideDuration: 1500,
       });
     }
   };
+
+  // Định dạng tiền tệ
   const formatCurrency = (amount: number): string => {
     return amount?.toLocaleString("vi-VN", {
       style: "currency",
@@ -44,9 +66,11 @@ const HistoryIncome: React.FC = () => {
     });
   };
 
-  const timestampToDate = (createdAt: { seconds: number; nanoseconds: number }): Date => {
-    return new Date(createdAt.seconds * 1000 + createdAt.nanoseconds / 1000000);
+  // Chuyển đổi timestamp thành ngày
+  const timestampToDate = (createdAt: Timestamp): string => {
+    return new Date(createdAt.seconds * 1000).toLocaleDateString("vi-VN");
   };
+
   return (
     <Paper sx={{ p: 2 }}>
       <Card>
@@ -54,37 +78,35 @@ const HistoryIncome: React.FC = () => {
           <Typography variant="h5" component="h2" gutterBottom>
             Lịch Sử Thu Nhập Theo Tháng
           </Typography>
-          <Button variant="outlined" onClick={fetchAllMonthlyIncomeRecords} sx={{ mb: 2 }}>
+          <Button variant="outlined" onClick={fetchAllMonthlyRecords} sx={{ mb: 2 }}>
             Xem Tất Cả
           </Button>
           <Box sx={{ mt: 2 }}>
-            {incomeHistory
+            {allMonthlyRecords
               .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds)
-              .map((entry) => (
-                <Paper key={entry.id} elevation={1} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box>
-                      <Typography variant="subtitle1">{entry.title}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {timestampToDate(entry.createdAt).toLocaleDateString("vi-VN")}
-                      </Typography>
-                    </Box>
-                    <Typography variant="subtitle1">{formatCurrency(entry.amount)}</Typography>
-                  </Box>
-                </Paper>
-              ))}
-            {showAllRecords &&
-              allMonthlyIncomeRecords.map((record) => (
+              .map((record) => (
                 <Paper key={record.id} elevation={1} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box>
-                      <Typography variant="subtitle1">{record.title}</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    Tháng {record.month}/{record.year}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    Tổng Thu Nhập: {formatCurrency(record.totalIncome)}
+                  </Typography>
+                  {record.jars.map((jar) => (
+                    <Box key={jar.id} sx={{ mb: 1 }}>
+                      <Typography variant="body1">{jar.name}</Typography>
+                      <Typography variant="body2">Tổng tích lũy: {formatCurrency(jar.totalAmount)}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {timestampToDate(record.createdAt).toLocaleDateString("vi-VN")}
+                        Đã tiêu: {formatCurrency(jar.spent)}
+                      </Typography>
+                      <Typography variant="body2" color="success.main">
+                        Còn lại: {formatCurrency(jar.totalAmount - jar.spent)}
                       </Typography>
                     </Box>
-                    <Typography variant="subtitle1">{formatCurrency(record.amount)}</Typography>
-                  </Box>
+                  ))}
+                  <Typography variant="body2" color="text.secondary">
+                    Ngày reset: {timestampToDate(record.createdAt)}
+                  </Typography>
                 </Paper>
               ))}
           </Box>
@@ -93,4 +115,5 @@ const HistoryIncome: React.FC = () => {
     </Paper>
   );
 };
+
 export default HistoryIncome;

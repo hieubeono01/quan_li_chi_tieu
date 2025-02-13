@@ -8,34 +8,36 @@ import BudgetItem from "./BudgetItem";
 
 interface BudgetListProps {
   jarId: string; // Thêm prop jarId
+  incomeId: string; // Thêm prop incomeId
   onTotalIncomeChange: (totalIncome: number) => void;
 }
 
-function BudgetList({ jarId, onTotalIncomeChange }: BudgetListProps) {
+function BudgetList({ jarId, incomeId, onTotalIncomeChange }: BudgetListProps) {
   const [budgetList, setBudgetList] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [user, loading, error] = useAuthState(auth);
-
   useEffect(() => {
-    if (user) {
+    if (user && incomeId) {
       getBudgetList();
     }
-  }, [user, jarId]);
+  }, [user, jarId, incomeId]);
 
-  // Cập nhật hàm lấy danh sách budget để lọc theo jarId
+  // Cập nhật hàm lấy danh sách budget để lọc theo jarId và incomeId
   const getBudgetList = async () => {
     try {
       const budgetsRef = collection(db, "budgets");
       const expensesRef = collection(db, "expenses");
 
-      // Tạo query dựa vào điều kiện jarId
+      // Tạo query dựa vào điều kiện jarId và incomeId
       let budgetsQuery;
-      if (jarId && jarId.trim() !== "") {
-        // Nếu có jarId, sử dụng cả 2 điều kiện
-        budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid), where("jarId", "==", jarId));
+      if (jarId && jarId.trim() !== "" && incomeId && incomeId.trim() !== "") {
+        // Nếu có jarId và incomeId, sử dụng cả 3 điều kiện
+        budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid), where("jarId", "==", jarId), where("incomeId", "==", incomeId));
+      } else if (incomeId && incomeId.trim() !== "") {
+        // Nếu chỉ có incomeId, sử dụng 2 điều kiện
+        budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid), where("incomeId", "==", incomeId));
       } else {
-        // Nếu không có jarId hoặc jarId rỗng, chỉ dùng điều kiện createdByID
-        budgetsQuery = query(budgetsRef, where("createdByID", "==", user?.uid));
+        throw new Error("incomeId must be defined");
       }
 
       const budgetsSnapshot = await getDocs(budgetsQuery);
@@ -93,14 +95,12 @@ function BudgetList({ jarId, onTotalIncomeChange }: BudgetListProps) {
 
   return (
     <div className="mt-7">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold">Tổng thu nhập: {totalIncome.toLocaleString()} VND</h2>
-      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {!!jarId ? (
           <CreateBudget
             onBudgetCreated={handleBudgetCreated}
             jarId={jarId} // Truyền jarId xuống CreateBudget
+            incomeId={incomeId} // Truyền incomeId xuống CreateBudget
           />
         ) : null}
         {budgetList?.length > 0 ? budgetList.map((budget) => <BudgetItem key={budget.id} budget={budget} />) : [1, 2, 3, 4, 5].map((item, index) => <div className="w-full bg-slate-200 rounded-lg h-[150px] animate-pulse" key={index} />)}

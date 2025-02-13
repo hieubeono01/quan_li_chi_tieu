@@ -11,18 +11,25 @@ import { Box, Button, Dialog, DialogContent, DialogTitle, TextField, Typography 
 interface CreateBudgetProps {
   onBudgetCreated: (budget: any) => void;
   jarId: string;
+  incomeId: string; // Thêm incomeId
 }
 
-function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
+function CreateBudget({ onBudgetCreated, jarId, incomeId }: CreateBudgetProps) {
   const [emoji, setEmoji] = useState("😲");
   const [openEmoji, setOpenEmoji] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [name, setName] = useState("");
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState<number | string>(0); // Initialize as number or string
   const [user, loading, error] = useAuthState(auth);
   const { enqueueSnackbar } = useSnackbar();
 
   const onCreateBudget = async () => {
+    console.log("onCreateBudget called"); // Add logging
+    console.log("User:", user);
+    console.log("IncomeId:", incomeId);
+    console.log("Name:", name);
+    console.log("Amount:", amount);
+
     try {
       if (!user) {
         enqueueSnackbar("Bạn cần đăng nhập để tạo ví!", {
@@ -31,11 +38,18 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
         });
         return;
       }
+      if (!incomeId) {
+        enqueueSnackbar("incomeId không được để trống!", {
+          variant: "error",
+          autoHideDuration: 1500,
+        });
+        return;
+      }
       const budgetsRef = collection(db, "budgets");
       const newDocRef = doc(budgetsRef);
       const newId = newDocRef.id;
 
-      // Thêm jarId vào budgetData
+      // Thêm jarId và incomeId vào budgetData
       const budgetData = {
         id: newId,
         name: name,
@@ -45,7 +59,10 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
         icon: emoji,
         createdAt: new Date().toISOString(),
         jarId: jarId, // Thêm trường jarId
+        incomeId: incomeId, // Thêm trường incomeId
       };
+
+      console.log("Budget Data:", budgetData); // Add logging
 
       await setDoc(newDocRef, budgetData);
       console.log("Document successfully created with ID:", newId);
@@ -54,7 +71,7 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
         autoHideDuration: 1500,
       });
 
-      // Cập nhật callback để bao gồm jarId
+      // Cập nhật callback để bao gồm jarId và incomeId
       if (onBudgetCreated) {
         onBudgetCreated({
           id: newId,
@@ -62,6 +79,7 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
           amount: parseFloat(amount.toString()),
           icon: emoji,
           jarId, // Thêm jarId vào dữ liệu trả về
+          incomeId, // Thêm incomeId vào dữ liệu trả về
           createdByID: user.uid,
           createdBy: user.displayName || "Ẩn danh",
           createdAt: new Date().toISOString(),
@@ -90,7 +108,10 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
       >
         <Button
           variant="contained"
-          onClick={() => setOpenDialog(true)}
+          onClick={() => {
+            console.log("Open dialog"); // Add logging
+            setOpenDialog(true);
+          }}
           startIcon={<span>➕</span>} // Thêm icon phía trước
           sx={{
             backgroundColor: "#e0e0e0", // Màu xám
@@ -150,7 +171,14 @@ function CreateBudget({ onBudgetCreated, jarId }: CreateBudgetProps) {
               >
                 Số tiền ngân sách
               </Typography>
-              <TextField fullWidth type="number" placeholder="Nhập số tiền ngân sách" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value))} variant="outlined" />
+              <TextField
+                fullWidth
+                type="number"
+                placeholder="Nhập số tiền ngân sách"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : "")} // Ensure valid number or empty string
+                variant="outlined"
+              />
             </Box>
 
             <Button variant="contained" disabled={!(name && amount)} onClick={onCreateBudget} fullWidth sx={{ mt: 3 }}>

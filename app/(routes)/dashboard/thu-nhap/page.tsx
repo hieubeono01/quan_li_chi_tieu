@@ -7,6 +7,8 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { enqueueSnackbar, useSnackbar } from "notistack";
 import HistoryIncome from "./components/historyIncome";
+import { useTheme } from "../../../_context/ThemeContext";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Jar {
   id: string;
@@ -45,6 +47,9 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
   const [incomeHistory, setIncomeHistory] = useState<IncomeEntry[]>([]);
   const [totalIncome, setTotalIncome] = useState<number>(0);
   const [jars, setJars] = useState<Jar[]>(DEFAULT_JARS);
+  const [incomeId, setIncomeId] = useState<string>("");
+  const { isDarkMode } = useTheme();
+  
   const [percentages, setPercentages] = useState<{ [key: string]: number }>(
     DEFAULT_JARS.reduce((acc, jar) => {
       acc[jar.id] = jar.percentage;
@@ -53,13 +58,32 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
   );
   const [user] = useAuthState(auth);
   const { enqueueSnackbar } = useSnackbar();
-  
-  
+  useEffect(() => {
+    // Kiểm tra xem incomeId đã được lưu trong localStorage chưa
+    const storedIncomeId = localStorage.getItem("incomeId");
+    if (storedIncomeId) {
+      setIncomeId(storedIncomeId); // Sử dụng incomeId đã lưu
+    } else {
+      const newIncomeId = uuidv4(); // Tạo incomeId mới
+      localStorage.setItem("incomeId", newIncomeId); // Lưu vào localStorage
+      setIncomeId(newIncomeId);
+    }
+  }, []);
+  useEffect(() => {
+    if (user?.uid) {
+      fetchIncomeData();
+      fetchJarSpentValues(incomeId);
+    }
+  }, [user]);
 
-  const fetchJarSpentValues = async () => {
+  const fetchJarSpentValues = async (incomeId: string) => {
     try {
       const budgetsCollection = collection(db, "budgets");
-      const querySnapshot = await getDocs(budgetsCollection);
+
+      // Thêm điều kiện incomeId vào truy vấn
+      const q = query(budgetsCollection, where("incomeId", "==", incomeId));
+
+      const querySnapshot = await getDocs(q);
 
       const spentTotals: { [key: string]: number } = {};
 
@@ -71,7 +95,7 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
         spentTotals[jarId] = (spentTotals[jarId] || 0) + amount;
       });
 
-      // Update jars with spent values
+      // Cập nhật jars với giá trị spent
       setJars((prevJars) =>
         prevJars.map((jar) => ({
           ...jar,
@@ -123,12 +147,7 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
   };
 
   // Combine data fetching in useEffect
-  useEffect(() => {
-    if (user?.uid) {
-      fetchIncomeData();
-      fetchJarSpentValues();
-    }
-  }, [user]);
+  
 
   // Rest of the component remains the same...
   const handlePercentageChange = (jarId: string, newPercentage: number) => {
@@ -182,6 +201,7 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
     try {
       const calculatedJars = calculateJars(income);
       const incomeData = {
+        id: incomeId,
         userId: user.uid,
         title: incomeTitle,
         amount: parseFloat(income),
@@ -194,7 +214,7 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
 
       await addDoc(collection(db, "income"), incomeData);
       await fetchIncomeData();
-      await fetchJarSpentValues();
+      await fetchJarSpentValues(incomeId);
 
       setIncome("");
       setIncomeTitle("");
@@ -222,16 +242,16 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
     return new Date(createdAt.seconds * 1000 + createdAt.nanoseconds / 1000000);
   };
 
-  const handleJarClick = (jarId: string) => {
-    router.push(`thu-nhap/${jarId}`);
+  const handleJarClick = (jarId: string, incomeId : string) => {
+    console.log("incomeId:", incomeId);
+    router.push(`/dashboard/thu-nhap/${jarId}?incomeId=${incomeId}`);
   };
-  const saveMonthlyIncomeRecord = async () => {
-    if (!user?.uid) return;
-
+  const saveMonthlyHistory = async (userId: string, jars: Jar[], totalIncome: number) => {
     try {
+      const now = new Date();
       const monthlyRecord = {
-        userId: user.uid,
-        totalIncome: totalIncome,
+        month: now.getMonth() + 1, // Tháng (1-12)
+        year: now.getFullYear(), // Năm
         jars: jars.map((jar) => ({
           id: jar.id,
           name: jar.name,
@@ -239,82 +259,161 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
           totalAmount: jar.totalAmount,
           spent: jar.spent,
         })),
-        incomeHistory: incomeHistory,
+        totalIncome: totalIncome,
         createdAt: Timestamp.now(),
       };
 
-      await addDoc(collection(db, "monthly_income_records"), monthlyRecord);
-      enqueueSnackbar("Đã lưu bản ghi thu nhập hàng tháng!", {
-        variant: "success",
-        autoHideDuration: 1500,
-      });
+      // Lưu vào collection `monthlyHistory`
+      await addDoc(collection(db, `users/${userId}/monthlyHistory`), monthlyRecord);
+      console.log("Lưu lịch sử hàng tháng thành công!");
     } catch (error) {
-      console.error("Error saving monthly income record:", error);
-      enqueueSnackbar("Lỗi khi lưu bản ghi thu nhập hàng tháng!", {
-        variant: "error",
-        autoHideDuration: 1500,
-      });
+      console.error("Lỗi khi lưu lịch sử hàng tháng:", error);
     }
   };
   
-  const resetTotalIncome = async () => {
+  const resetCurrentJars = async (userId: string) => {
     try {
-      await saveMonthlyIncomeRecord();
+      // Lấy tất cả bản ghi thu nhập hiện tại
+      const incomeQuery = query(collection(db, "income"), where("userId", "==", userId));
+      const incomeSnapshot = await getDocs(incomeQuery);
 
-      // Reset local state
-      setTotalIncome(0);
-      setIncomeHistory([]);
-
-      // Xóa tất cả các document trong collection "income" của người dùng hiện tại
-      if (user?.uid) {
-        const q = query(collection(db, "income"), where("userId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-
-        const batch = writeBatch(db);
-        querySnapshot.forEach((doc) => {
-          batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-
-        // Reset jars
-        setJars(DEFAULT_JARS);
-
-        enqueueSnackbar("Đã reset toàn bộ thu nhập!", {
-          variant: "success",
-          autoHideDuration: 1500,
-        });
-      }
-    } catch (error) {
-      console.error("Error resetting income:", error);
-      enqueueSnackbar("Lỗi khi reset thu nhập!", {
-        variant: "error",
-        autoHideDuration: 1500,
+      // Xóa tất cả bản ghi thu nhập hiện tại
+      const batch = writeBatch(db);
+      incomeSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
       });
+      await batch.commit();
+
+      setIncomeId(uuidv4()); // Generate a new ID after reset
+      console.log("Reset dữ liệu hiện tại thành công!");
+    } catch (error) {
+      console.error("Lỗi khi reset dữ liệu hiện tại:", error);
+    }
+  };
+  const handleMonthlyReset = async (userId: string) => {
+    try {
+      // Lấy dữ liệu hiện tại từ collection `income`
+      const incomeQuery = query(collection(db, "income"), where("userId", "==", userId));
+      const incomeSnapshot = await getDocs(incomeQuery);
+
+      let totalIncome = 0;
+      const jarsData: Jar[] = [];
+
+      // Tính tổng thu nhập và tổng hợp dữ liệu các lọ
+      incomeSnapshot.forEach((doc) => {
+        const data = doc.data();
+        totalIncome += data.amount;
+        data.jars.forEach((jar: Jar) => {
+          const existingJar = jarsData.find((j) => j.id === jar.id);
+          if (existingJar) {
+            existingJar.totalAmount += jar.totalAmount;
+            existingJar.spent += jar.spent;
+          } else {
+            jarsData.push({ ...jar });
+          }
+        });
+      });
+
+      // Lưu dữ liệu vào lịch sử
+      await saveMonthlyHistory(userId, jarsData, totalIncome);
+
+      // Reset dữ liệu hiện tại
+      await resetCurrentJars(userId);
+
+      // Tạo incomeId mới
+      const newIncomeId = uuidv4();
+      localStorage.setItem("incomeId", newIncomeId); // Cập nhật localStorage
+      setIncomeId(newIncomeId); // Cập nhật state
+
+      console.log("Reset tháng thành công!");
+    } catch (error) {
+      console.error("Lỗi khi reset tháng:", error);
     }
   };
   
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper sx={{ mb: 4, p: 2 }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: 4,
+        bgcolor: "background.default",
+        minHeight: "100vh",
+        transition: "background-color 0.3s",
+      }}
+    >
+      <Paper
+        sx={{
+          mb: 4,
+          p: 2,
+          bgcolor: "background.paper",
+          transition: "background-color 0.3s",
+        }}
+      >
         <Typography variant="h4" gutterBottom>
           Tổng Thu Nhập: {formatCurrency(totalIncome)}
         </Typography>
-        <Button disabled variant="outlined" color="error" onClick={resetTotalIncome} sx={{ ml: 2 }}>
+        <Button variant="outlined" color="error" onClick={() => handleMonthlyReset(user.uid)} sx={{ ml: 2 }}>
           Reset Thu Nhập
         </Button>
       </Paper>
 
       {/* Form nhập thu nhập */}
-      <Paper sx={{ mb: 4, p: 2 }}>
-        <Card>
+      <Paper
+        sx={{
+          mb: 4,
+          p: 2,
+          bgcolor: "background.paper",
+          transition: "background-color 0.3s",
+        }}
+      >
+        <Card
+          sx={{
+            bgcolor: "background.paper",
+            transition: "background-color 0.3s",
+          }}
+        >
           <CardContent>
             <Typography variant="h5" component="h2" gutterBottom>
               Quản Lý Thu Nhập Theo Phương Pháp 6 Lọ
             </Typography>
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-              <TextField fullWidth label="Tên thu nhập" variant="outlined" value={incomeTitle} onChange={(e) => setIncomeTitle(e.target.value)} sx={{ mb: 2 }} />
-              <TextField fullWidth label="Số tiền" type="number" variant="outlined" value={income} onChange={handleIncomeChange} sx={{ mb: 2 }} />
+              <TextField
+                fullWidth
+                label="Tên thu nhập"
+                variant="outlined"
+                value={incomeTitle}
+                onChange={(e) => setIncomeTitle(e.target.value)}
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.23)" : "rgba(0, 0, 0, 0.23)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Số tiền"
+                type="number"
+                variant="outlined"
+                value={income}
+                onChange={handleIncomeChange}
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.23)" : "rgba(0, 0, 0, 0.23)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+                    },
+                  },
+                }}
+              />
               <Button disabled={!incomeTitle || !income} type="submit" variant="contained" fullWidth size="large" sx={{ mt: 1 }}>
                 Lưu Thu Nhập
               </Button>
@@ -324,20 +423,28 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
       </Paper>
 
       {/* Hiển thị các lọ */}
-      <Paper sx={{ mb: 4, p: 2 }}>
+      <Paper
+        sx={{
+          mb: 4,
+          p: 2,
+          bgcolor: "background.paper",
+          transition: "background-color 0.3s",
+        }}
+      >
         <Grid container spacing={3}>
           {jars.map((jar) => (
             <Grid item xs={12} sm={6} md={4} key={jar.id}>
               <Card
                 sx={{
                   cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
+                  transition: "all 0.3s",
+                  bgcolor: "background.paper",
                   "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: 4,
+                    boxShadow: isDarkMode ? "0 4px 20px rgba(0,0,0,0.5)" : 4,
                   },
                 }}
-                onClick={() => handleJarClick(jar.id)}
+                onClick={() => handleJarClick(jar.id,incomeId)}
               >
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -350,7 +457,17 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => handlePercentageChange(jar.id, parseFloat(e.target.value))}
                     fullWidth
-                    sx={{ mb: 2 }}
+                    sx={{
+                      mb: 2,
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: isDarkMode ? "rgba(255, 255, 255, 0.23)" : "rgba(0, 0, 0, 0.23)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
+                        },
+                      },
+                    }}
                   />
                   <Typography variant="body1">Thu nhập mới: {formatCurrency(jar.amount)}</Typography>
                   <Typography variant="body1" color="primary">
@@ -368,6 +485,7 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
           ))}
         </Grid>
       </Paper>
+
       {/* Lịch sử thu nhập */}
       <HistoryIncome />
     </Container>

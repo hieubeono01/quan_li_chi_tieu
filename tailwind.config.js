@@ -18,7 +18,19 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-  			background: 'hsl(var(--background))',
+				primary: {
+					DEFAULT: 'var(--color-primary)',
+					dark: 'var(--color-primary-dark)'
+				},
+				background: {
+					DEFAULT: 'var(--color-background)',
+					dark: 'var(--color-background-dark)'
+				},
+				text: {
+					DEFAULT: 'var(--color-text)',
+					dark: 'var(--color-text-dark)'
+				},
+  			
   			foreground: 'hsl(var(--foreground))',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
