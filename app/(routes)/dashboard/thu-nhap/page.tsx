@@ -40,7 +40,7 @@ const DEFAULT_JARS: Jar[] = [
   { id: "GIVE", name: "Cho Đi (GIVE)", percentage: 5, amount: 0, totalAmount: 0, spent: 0 },
 ];
 
-const SixJarsFinance = ({ totalIncomeFromBudget }) => {
+const SixJarsFinance = ({}) => {
   const router = useRouter();
   const [income, setIncome] = useState<string>("");
   const [incomeTitle, setIncomeTitle] = useState<string>("");
@@ -49,7 +49,6 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
   const [jars, setJars] = useState<Jar[]>(DEFAULT_JARS);
   const [incomeId, setIncomeId] = useState<string>("");
   const { isDarkMode } = useTheme();
-  
   const [percentages, setPercentages] = useState<{ [key: string]: number }>(
     DEFAULT_JARS.reduce((acc, jar) => {
       acc[jar.id] = jar.percentage;
@@ -69,14 +68,16 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
       setIncomeId(newIncomeId);
     }
   }, []);
+
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && incomeId) {
       fetchIncomeData();
       fetchJarSpentValues(incomeId);
     }
-  }, [user]);
+  }, [user, incomeId]);
 
   const fetchJarSpentValues = async (incomeId: string) => {
+    if (!user?.uid) return;
     try {
       const budgetsCollection = collection(db, "budgets");
 
@@ -84,7 +85,6 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
       const q = query(budgetsCollection, where("incomeId", "==", incomeId));
 
       const querySnapshot = await getDocs(q);
-
       const spentTotals: { [key: string]: number } = {};
 
       querySnapshot.forEach((doc) => {
@@ -145,9 +145,6 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
       console.error("Error fetching income data:", error);
     }
   };
-
-  // Combine data fetching in useEffect
-  
 
   // Rest of the component remains the same...
   const handlePercentageChange = (jarId: string, newPercentage: number) => {
@@ -249,6 +246,14 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
   const saveMonthlyHistory = async (userId: string, jars: Jar[], totalIncome: number) => {
     try {
       const now = new Date();
+
+      // Tính tổng spent của các jar
+      const totalSpent = jars.reduce((sum, jar) => sum + jar.spent, 0);
+
+      // Tính giá trị cần lưu vào collection `spend`
+      const remainingAmount = totalIncome - totalSpent;
+
+      // Tạo bản ghi lịch sử hàng tháng
       const monthlyRecord = {
         month: now.getMonth() + 1, // Tháng (1-12)
         year: now.getFullYear(), // Năm
@@ -260,14 +265,28 @@ const SixJarsFinance = ({ totalIncomeFromBudget }) => {
           spent: jar.spent,
         })),
         totalIncome: totalIncome,
+        totalSpent: totalSpent, // Thêm tổng spent vào bản ghi
+        remainingAmount: remainingAmount, // Thêm số tiền còn lại
         createdAt: Timestamp.now(),
       };
 
       // Lưu vào collection `monthlyHistory`
       await addDoc(collection(db, `users/${userId}/monthlyHistory`), monthlyRecord);
       console.log("Lưu lịch sử hàng tháng thành công!");
+
+      // Lưu giá trị remainingAmount vào collection `spend`
+      const spendRecord = {
+        userId: userId,
+        remainingAmount: remainingAmount,
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
+        createdAt: Timestamp.now(),
+      };
+
+      await addDoc(collection(db, "spend"), spendRecord);
+      console.log("Lưu dữ liệu vào collection spend thành công!");
     } catch (error) {
-      console.error("Lỗi khi lưu lịch sử hàng tháng:", error);
+      console.error("Lỗi khi lưu dữ liệu:", error);
     }
   };
   

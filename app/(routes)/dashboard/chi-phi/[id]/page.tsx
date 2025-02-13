@@ -67,6 +67,7 @@ function ExpensesScreen({ params }) {
       }
     }
   }, [user, params.id]);
+  console.log("expensesList", expensesList);
   console.log("budgetInfo", budgetInfo);
   useEffect(() => {
     refreshData();

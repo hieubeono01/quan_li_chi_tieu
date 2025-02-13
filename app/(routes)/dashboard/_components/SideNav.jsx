@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import { LayoutGrid, PiggyBank, ReceiptText, ShieldCheck, Wallet } from "lucide-react";
+import { LayoutGrid, PiggyBank, ReceiptText, ShieldCheck, Target, Wallet } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import UserButton from "./userButton";
@@ -34,6 +34,12 @@ function SideNav({ onClose }) {
     },
     {
       id: 5,
+      name: "Chi Phi",
+      icon: Target,
+      path: "/dashboard/muc-tieu",
+    },
+    {
+      id: 6,
       name: "Nang Cap",
       icon: ShieldCheck,
       path: "/dashboard/thanh-toan",

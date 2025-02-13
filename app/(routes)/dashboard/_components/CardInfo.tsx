@@ -1,7 +1,8 @@
 import { PiggyBank, ReceiptText, Wallet } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 
-function CardInfo({budgetList}) {
+function CardInfo({ budgetList, totalIncome }) {
+  console.log("totalIncome", totalIncome);
   const [totalBudget, setTotalBudget] = useState(0);
   const [totalSpend, setTotalSpend] = useState(0);
   useEffect(() => {
@@ -17,18 +18,24 @@ function CardInfo({budgetList}) {
     console.log(budgetList);
     let totalBudget_ = 0;
     let totalSpend_ = 0;
-    budgetList.forEach(element => {
+    budgetList.forEach((element) => {
       totalBudget_ += element.amount;
       totalSpend_ += element.totalSpend;
     });
     setTotalBudget(totalBudget_);
     setTotalSpend(totalSpend_);
-    console.log(totalBudget_,totalSpend_);
   };
   return (
     <div>
       {budgetList?.length > 0 ? (
         <div className="mt-7 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="p-7 border rounded-lg flex justify-between items-center">
+            <div className="">
+              <h2 className="text-sm">Thu nhập</h2>
+              <h2 className="font-bold text-2xl">{formatCurrency(totalIncome)}</h2>
+            </div>
+            <Wallet className="bg-primary p-3 h-12 w-12 rounded-full text-white" />
+          </div>
           <div className="p-7 border rounded-lg flex justify-between items-center">
             <div className="">
               <h2 className="text-sm">Ngân sách</h2>
@@ -42,13 +49,6 @@ function CardInfo({budgetList}) {
               <h2 className="font-bold text-2xl">{formatCurrency(totalSpend)}</h2>
             </div>
             <ReceiptText className="bg-primary p-3 h-12 w-12 rounded-full text-white" />
-          </div>
-          <div className="p-7 border rounded-lg flex justify-between items-center">
-            <div className="">
-              <h2 className="text-sm">Ví</h2>
-              <h2 className="font-bold text-2xl">{budgetList?.length}</h2>
-            </div>
-            <Wallet className="bg-primary p-3 h-12 w-12 rounded-full text-white" />
           </div>
         </div>
       ) : (

@@ -104,13 +104,13 @@ const AuthenticationPage = () => {
             <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition">Login</button>
           </form>
           <div className="mt-6 flex flex-col gap-2">
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={googleLoading || !!user} onClick={handleLoginWithGoogle}>
+            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#116ADE" }} disabled={googleLoading} onClick={handleLoginWithGoogle}>
               <SocialBox>
                 <Google />
               </SocialBox>
               <Typography>Google</Typography>
             </SocialButton>
-            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#3b5998" }} disabled={facebookLoading || !!user} onClick={handleLoginWithFacebook}>
+            <SocialButton variant="contained" size="large" sx={{ backgroundColor: "#3b5998" }} disabled={facebookLoading} onClick={handleLoginWithFacebook}>
               <SocialBox>
                 <Facebook />
               </SocialBox>

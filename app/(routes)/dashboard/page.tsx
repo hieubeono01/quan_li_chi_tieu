@@ -12,73 +12,63 @@ import ExpensesListTable from "./chi-phi/_components/ExpensesListTable";
 import dynamic from "next/dynamic";
 import { Stack } from "@mui/material";
 import { useTheme } from "../../_context/ThemeContext";
+import MonthlyChart from "../dashboard/_components/MonthlyChart";
 
 
-const IncomeChart = dynamic(() => import("../../_components/incomeCharts"), { ssr: false });
 function Dashboard() {
   const [user, loading, error] = useAuthState(auth);
+  const [totalIncome, setTotalIncome] = useState<number | null>(null);
   const [budgetList, setBudgetList] = useState([]);
   const [expensesList, setExpensesList] = useState([]);
   const [incomeData, setIncomeData] = useState([]);
   const { isDarkMode } = useTheme();
   const [incomeId, setIncomeId] = useState("");
-    useEffect(() => {
-      const storedIncomeId = localStorage.getItem("incomeId");
-      if (storedIncomeId) {
-        setIncomeId(storedIncomeId);
-      }
-    }, []);
-
+  
+  useEffect(() => {
+    const storedIncomeId = localStorage.getItem("incomeId");
+    if (storedIncomeId) {
+      setIncomeId(storedIncomeId);
+    }
+  }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && incomeId) {
       getBudgetList();
       getAllExpenses();
-      getIncomeData();
-
+      getTotalIncome(user.uid);
     }
-  }, [user]);
-  const formatCurrency = (amount: number): string => {
-    return amount?.toLocaleString("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    });
-  };
-  const getMonthlyIncome = async (userId, year, month) => {
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+  }, [user, incomeId]);
 
-    const q = query(collection(db, "monthly_income_records"), where("createdAt", ">=", Timestamp.fromDate(startOfMonth)), where("createdAt", "<=", Timestamp.fromDate(endOfMonth)), where("userId", "==", userId));
+  const getTotalIncome = async (userId: string): Promise<number> => {
+    console.time("getTotalIncome");
+    try {
+      // Tạo truy vấn để lấy tất cả documents trong collection "income" với userId tương ứng
+      const incomeQuery = query(collection(db, "income"), where("userId", "==", userId));
+      const querySnapshot = await getDocs(incomeQuery);
 
-    const incomeSnapshot = await getDocs(q);
-    const income = incomeSnapshot.docs.map((doc) => doc.data());
-    return income;
-  };
-  const aggregateIncomeByMonth = (incomeData) => {
-    const monthlyIncome = incomeData.reduce((acc, item) => {
-      const date = new Date(item.createdAt.seconds * 1000);
-      const month = date.toLocaleString("default", { month: "long" });
-      const year = date.getFullYear();
-      const key = `${month} ${year}`;
+      let totalAmount = 0;
 
-      if (!acc[key]) {
-        acc[key] = 0;
-      }
-      acc[key] += item.amount;
-      return acc;
-    }, {});
+      // Lặp qua từng document và cộng dồn amount
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.amount && typeof data.amount === "number") {
+          totalAmount += data.amount;
+        }
+      });
 
-    return Object.keys(monthlyIncome).map((key) => ({
-      name: key,
-      amount: monthlyIncome[key],
-    }));
+      console.log("Tổng amount:", totalAmount);
+      setTotalIncome(totalAmount);
+      return totalAmount;
+    } catch (error) {
+      console.error("Lỗi khi truy vấn Firestore:", error);
+      throw error; // Ném lỗi để xử lý ở nơi gọi hàm
+    } finally {
+      console.timeEnd("getTotalIncome");
+    }
   };
-  const getIncomeData = async () => {
-    const income = await getMonthlyIncome(user.uid, 2025, 1); // Lấy dữ liệu tháng 1 năm 2025
-    const aggregatedData = aggregateIncomeByMonth(income);
-    setIncomeData(aggregatedData);
-  };
+
   const getBudgetList = async () => {
+    console.time("getBudgetList");
     try {
       const budgetsRef = collection(db, "budgets");
       const expensesRef = collection(db, "expenses");
@@ -111,10 +101,13 @@ function Dashboard() {
       setBudgetList(result);
     } catch (error) {
       console.error("Error fetching budget list:", error);
+    } finally {
+      console.timeEnd("getBudgetList");
     }
   };
 
   const getAllExpenses = async () => {
+    console.time("getAllExpenses");
     try {
       const expensesRef = collection(db, "expenses");
 
@@ -139,13 +132,16 @@ function Dashboard() {
     } catch (error) {
       console.error("Error fetching expenses: ", error);
       throw error;
+    } finally {
+      console.timeEnd("getAllExpenses");
     }
   };
+
   return (
     <div className={`p-5 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} min-h-screen transition-colors duration-200`}>
       <h2 className={`font-bold text-3xl mb-6 ${isDarkMode ? "text-white" : "text-gray-900"}`}>Xin chào, {user ? user.displayName : "Guest"}</h2>
 
-      <CardInfo budgetList={budgetList} />
+      <CardInfo budgetList={budgetList} totalIncome={totalIncome} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
         {/* Cột bên trái (chiếm 2/3 trên màn hình lớn) */}
@@ -158,9 +154,12 @@ function Dashboard() {
             <ExpensesListTable expensesList={expensesList} refreshData={() => getBudgetList} />
           </div>
 
-          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+          {/* <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
             <h2 className={`font-bold text-lg mb-4 ${isDarkMode ? "text-white" : "text-gray-900"}`}>Thống kê thu nhập</h2>
             <IncomeChart data={incomeData} />
+          </div> */}
+          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
+            <MonthlyChart userId={user?.uid} />
           </div>
         </div>
 

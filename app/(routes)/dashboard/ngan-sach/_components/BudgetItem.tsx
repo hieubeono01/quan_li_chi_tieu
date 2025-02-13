@@ -2,6 +2,7 @@ import Link from "next/link";
 import React from "react";
 
 function BudgetItem({ budget }) {
+  console.log("budget",budget)
   // Tính toán tỷ lệ tiêu thụ ngân sách
   const calculateProgressPerc = () => {
     const perc = (budget.totalSpend / budget.amount) * 100;

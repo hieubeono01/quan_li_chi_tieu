@@ -24,12 +24,6 @@ function CreateBudget({ onBudgetCreated, jarId, incomeId }: CreateBudgetProps) {
   const { enqueueSnackbar } = useSnackbar();
 
   const onCreateBudget = async () => {
-    console.log("onCreateBudget called"); // Add logging
-    console.log("User:", user);
-    console.log("IncomeId:", incomeId);
-    console.log("Name:", name);
-    console.log("Amount:", amount);
-
     try {
       if (!user) {
         enqueueSnackbar("Bạn cần đăng nhập để tạo ví!", {
