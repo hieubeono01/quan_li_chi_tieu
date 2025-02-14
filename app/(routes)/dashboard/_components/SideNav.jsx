@@ -5,8 +5,10 @@ import { LayoutGrid, PiggyBank, ReceiptText, ShieldCheck, Target, Wallet } from 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import UserButton from "./userButton";
+import { useTheme } from "../../../_context/ThemeContext";
 
 function SideNav({ onClose }) {
+  const { isDarkMode } = useTheme();
   const menuList = [
     {
       id: 1,
@@ -55,7 +57,7 @@ function SideNav({ onClose }) {
   };
 
   return (
-    <div className="h-screen p-5 border shadow-sm bg-white">
+    <div className={`h-screen p-5 border shadow-sm ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"} transition-colors duration-200`}>
       <Image src="/logoMira.png" alt="logo" width={200} height={200} />
       <div className="mt-5">
         {menuList.map((menu) => (
@@ -63,10 +65,11 @@ function SideNav({ onClose }) {
             <h2
               className={`
               flex gap-2 items-center
-              text-gray-500 font-medium p-5
+              font-medium p-5
               cursor-pointer rounded-md
-              hover:text-primary hover:bg-blue-100
-              ${path === menu.path && "text-primary bg-blue-100"}
+              transition-colors duration-200
+              ${isDarkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-500 hover:bg-blue-100"}
+              ${path === menu.path && (isDarkMode ? "bg-gray-700 text-white" : "bg-blue-100 text-primary")}
             `}
             >
               <menu.icon />
@@ -75,7 +78,7 @@ function SideNav({ onClose }) {
           </Link>
         ))}
       </div>
-      <div className="fixed bottom-10 p-5 flex gap-2 items-center">
+      <div className={`fixed bottom-10 p-5 flex gap-2 items-center ${isDarkMode ? "text-white" : "text-gray-900"}`}>
         <UserButton /> Profile
       </div>
     </div>

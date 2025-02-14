@@ -32,11 +32,21 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (user && incomeId) {
-      getBudgetList();
-      getAllExpenses();
-      getTotalIncome(user.uid);
-    }
+    let isMounted = true;
+
+    const fetchData = async () => {
+      if (user && incomeId && isMounted) {
+        await getBudgetList();
+        await getAllExpenses();
+        await getTotalIncome(user.uid);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, incomeId]);
 
   const getTotalIncome = async (userId: string): Promise<number> => {
