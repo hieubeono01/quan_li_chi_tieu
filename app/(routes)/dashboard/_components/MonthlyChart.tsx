@@ -42,18 +42,16 @@ const MonthlyChart = ({ userId }: ChartProps) => {
         } as MonthlyData;
       });
 
-      // Sắp xếp theo thời gian
+      console.log(data); // Kiểm tra dữ liệu có được cập nhật đúng không
+
       data.sort((a, b) => (a.year === b.year ? a.month - b.month : a.year - b.year));
 
       setMonthlyData(data);
       setLoading(false);
     });
 
-    // Hủy lắng nghe khi component unmount
     return () => unsubscribe();
   }, [userId]);
-
-  // 2. Xử lý dữ liệu cho biểu đồ
   const processChartData = () => {
     return monthlyData.map((data) => ({
       month: `${data.month}/${data.year}`,
@@ -65,12 +63,17 @@ const MonthlyChart = ({ userId }: ChartProps) => {
       }, {}),
     }));
   };
-
+  
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
-
+  
   const chartData = processChartData();
-
+  const formatYAxisTick = (value) => {
+    if (value >= 1000) {
+      return `${value / 1000}k`; // Chia cho 1000 và thêm "k"
+    }
+    return value; // Giữ nguyên giá trị nếu nhỏ hơn 1000
+  };
   // 3. Render biểu đồ
   return (
     <div className="chart-container">
@@ -80,10 +83,16 @@ const MonthlyChart = ({ userId }: ChartProps) => {
       <div className="chart-section">
         <h3>Tổng thu nhập theo tháng</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
+          <LineChart key={JSON.stringify(chartData)} data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
+            <XAxis
+              dataKey="month"
+              tickFormatter={(value) => {
+                const [month, year] = value.split("/");
+                return `${month}/${year}`;
+              }}
+            />
+            <YAxis tickFormatter={formatYAxisTick} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="totalIncome" stroke="#8884d8" name="Tổng thu nhập" />
@@ -98,7 +107,7 @@ const MonthlyChart = ({ userId }: ChartProps) => {
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis />
+            <YAxis tickFormatter={formatYAxisTick} />
             <Tooltip />
             <Legend />
             {monthlyData[0]?.jars.map((jar, index) => (

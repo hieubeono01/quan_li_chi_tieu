@@ -12,7 +12,7 @@ function SideNav({ onClose }) {
   const menuList = [
     {
       id: 1,
-      name: "Trang Chu",
+      name: "Trang chủ",
       icon: LayoutGrid,
       path: "/dashboard",
     },
@@ -24,25 +24,25 @@ function SideNav({ onClose }) {
     },
     {
       id: 3,
-      name: "Ngan Sach",
+      name: "Ngân sách",
       icon: PiggyBank,
       path: "/dashboard/ngan-sach",
     },
     {
       id: 4,
-      name: "Chi Phi",
+      name: "Chi phí",
       icon: ReceiptText,
       path: "/dashboard/chi-phi",
     },
     {
       id: 5,
-      name: "Chi Phi",
+      name: "Mục tiêu",
       icon: Target,
       path: "/dashboard/muc-tieu",
     },
     {
       id: 6,
-      name: "Nang Cap",
+      name: "Nâng cấp",
       icon: ShieldCheck,
       path: "/dashboard/thanh-toan",
     },
