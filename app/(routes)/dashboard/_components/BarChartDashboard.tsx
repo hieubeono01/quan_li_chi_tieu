@@ -11,7 +11,8 @@ function BarChartDashboard({ budgetList }) {
   };
 
   return (
-    <div className="border rounded-lg p-5 h-[300px] sm:h-[200px] md:h-[250px] lg:h-[300px]">
+    <div className="border rounded-lg p-5 h-[300px] sm:h-[200px] md:h-[250px] lg:h-[300px] justify-items-center">
+      <h2>Biểu đồ chi trong tháng</h2>
       <ResponsiveContainer width="80%" height={300}>
         <BarChart data={budgetList} margin={{ top: 7 }}>
           <XAxis dataKey="name" stroke="#8884d8" />

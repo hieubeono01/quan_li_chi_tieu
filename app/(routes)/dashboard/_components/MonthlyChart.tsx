@@ -74,7 +74,18 @@ const MonthlyChart = ({ userId }: ChartProps) => {
     }
     return value; // Giữ nguyên giá trị nếu nhỏ hơn 1000
   };
-  // 3. Render biểu đồ
+  const stringToColor = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = "#";
+    for (let i = 0; i < 3; i++) {
+      const value = (hash >> (i * 8)) & 0xff;
+      color += ("00" + value.toString(16)).substr(-2);
+    }
+    return color;
+  };
   return (
     <div className="chart-container">
       <h2>Biểu đồ thu nhập và chi tiêu</h2>
@@ -110,8 +121,8 @@ const MonthlyChart = ({ userId }: ChartProps) => {
             <YAxis tickFormatter={formatYAxisTick} />
             <Tooltip />
             <Legend />
-            {monthlyData[0]?.jars.map((jar, index) => (
-              <Bar key={jar.id} dataKey={jar.name} fill={`#${Math.floor(Math.random() * 16777215).toString(16)}`} />
+            {monthlyData[0]?.jars.map((jar) => (
+              <Bar key={jar.id} dataKey={jar.name} fill={stringToColor(jar.name)} />
             ))}
           </BarChart>
         </ResponsiveContainer>
