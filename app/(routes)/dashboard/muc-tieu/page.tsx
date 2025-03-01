@@ -1,7 +1,8 @@
-'use client'
+"use client";
 import React, { useState, useEffect } from "react";
-import { Box, Card, CardContent, Typography, LinearProgress, Grid, Paper, useTheme } from "@mui/material";
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { Box, Card, CardContent, Typography, LinearProgress, Grid, Paper, useTheme, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from "@mui/material";
+import { Edit, Delete } from "@mui/icons-material";
+import { collection, getDocs, query, where, limit, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../../../../firebase/client-config";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -11,6 +12,10 @@ const FinancialGoals = () => {
   const [remainingAmount, setRemainingAmount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [newTargetAmount, setNewTargetAmount] = useState(0);
+  const [targetId, setTargetId] = useState(null); // Lưu ID của mục tiêu để sửa/xóa
   const theme = useTheme();
 
   useEffect(() => {
@@ -23,24 +28,66 @@ const FinancialGoals = () => {
     if (!user?.uid) return;
     try {
       // Fetch latest spend
-      const spendQuery = query(collection(db, "spend"), where("userId", "==", user.uid), limit(1));
+      const spendQuery = query(collection(db, "spend"), where("userId", "==", user.uid));
       const spendSnapshot = await getDocs(spendQuery);
 
       // Fetch latest target
       const targetQuery = query(collection(db, "targets"), where("userId", "==", user.uid), limit(1));
       const targetSnapshot = await getDocs(targetQuery);
 
+      let totalRemainingAmount = 0;
+
+      // Calculate total remainingAmount from spend collection
       if (!spendSnapshot.empty) {
-        setRemainingAmount(spendSnapshot.docs[0].data().remainingAmount);
+        spendSnapshot.forEach((doc) => {
+          totalRemainingAmount += doc.data().remainingAmount;
+        });
+        setRemainingAmount(totalRemainingAmount);
       }
 
       if (!targetSnapshot.empty) {
-        setTargetAmount(targetSnapshot.docs[0].data().targetAmount);
+        const targetData = targetSnapshot.docs[0].data();
+        setTargetAmount(targetData.targetAmount);
+        setTargetId(targetSnapshot.docs[0].id); // Lưu ID của mục tiêu
       }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    setNewTargetAmount(targetAmount); // Hiển thị giá trị hiện tại trong dialog
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleEditConfirm = async () => {
+    if (!targetId) return;
+    try {
+      const targetRef = doc(db, "targets", targetId);
+      await updateDoc(targetRef, { targetAmount: newTargetAmount });
+      setTargetAmount(newTargetAmount); // Cập nhật lại giá trị hiển thị
+      setEditDialogOpen(false);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!targetId) return;
+    try {
+      const targetRef = doc(db, "targets", targetId);
+      await deleteDoc(targetRef);
+      setTargetAmount(0); // Đặt lại mục tiêu về 0
+      setTargetId(null); // Xóa ID mục tiêu
+      setDeleteDialogOpen(false);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -66,9 +113,19 @@ const FinancialGoals = () => {
     <Box sx={{ maxWidth: 800, mx: "auto", p: 2 }}>
       <Card elevation={3}>
         <CardContent>
-          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-            Mục Tiêu Tài Chính
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Typography variant="h5" gutterBottom>
+              Mục Tiêu Tài Chính
+            </Typography>
+            <Box>
+              <IconButton onClick={handleEditClick} color="primary">
+                <Edit />
+              </IconButton>
+              <IconButton onClick={handleDeleteClick} color="error">
+                <Delete />
+              </IconButton>
+            </Box>
+          </Box>
 
           <Grid container spacing={3}>
             {/* Target Amount Card */}
@@ -108,7 +165,7 @@ const FinancialGoals = () => {
 
           {/* Progress Section */}
           <Box sx={{ mt: 4 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Box sx={{ display: "flex", justifyContent : "space-between", mb: 1 }}>
               <Typography variant="body2">Tiến độ</Typography>
               <Typography variant="body2" fontWeight="medium">
                 {progress.toFixed(1)}%
@@ -150,6 +207,34 @@ const FinancialGoals = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>Sửa Mục Tiêu</DialogTitle>
+        <DialogContent>
+          <TextField label="Mục tiêu mới" type="number" fullWidth value={newTargetAmount} onChange={(e) => setNewTargetAmount(Number(e.target.value))} sx={{ mt: 2 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Hủy</Button>
+          <Button onClick={handleEditConfirm} color="primary">
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Xóa Mục Tiêu</DialogTitle>
+        <DialogContent>
+          <Typography>Bạn có chắc chắn muốn xóa mục tiêu này?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+          <Button onClick={handleDeleteConfirm} color="error">
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

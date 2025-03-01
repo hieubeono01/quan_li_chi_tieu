@@ -2,8 +2,6 @@ import Link from "next/link";
 import React from "react";
 
 function BudgetItem({ budget }) {
-  console.log("budget",budget)
-  // Tính toán tỷ lệ tiêu thụ ngân sách
   const calculateProgressPerc = () => {
     const perc = (budget.totalSpend / budget.amount) * 100;
     return perc.toFixed(2);
@@ -17,12 +15,25 @@ function BudgetItem({ budget }) {
   // Kiểm tra xem ngân sách có sắp vượt quá ngưỡng hay không
   const isBudgetExceeded = () => {
     const perc = calculateProgressPerc();
-    return Number(perc) >= 80; // Cảnh báo nếu vượt quá 80%
+    return Number(perc); 
   };
+  const getWarningMessage = () => {
+    const perc = isBudgetExceeded();
+    if (perc >= 100) {
+      return "Cảnh báo: Bạn đã vượt ngân sách!";
+    } else if (perc === 100) {
+      return "Cảnh báo: Bạn đã tiêu hết ngân sách!";
+    } else if (perc >= 80) {
+      return "Cảnh báo: Bạn sắp vượt quá ngân sách!";
+    }
+    return null;
+  };
+
+  const warningMessage = getWarningMessage();
 
   return (
     <Link href={"/dashboard/chi-phi/" + budget.id}>
-      <div className={`p-5 border rounded-lg hover:shadow-md cursor-pointer h-[170px] ${isBudgetExceeded() ? "border-red-500" : "border-gray-200"}`}>
+      <div className={`p-5 border rounded-lg hover:shadow-md cursor-pointer h-[170px] ${isBudgetExceeded() >= 80 ? "border-red-500" : "border-gray-200"}`}>
         <div className="flex gap-2 items-center justify-between">
           <div className="flex gap-2 items-center">
             <h2 className="text-2xl p-3 px-4 bg-slate-100 rounded-full">{budget?.icon}</h2>
@@ -47,8 +58,7 @@ function BudgetItem({ budget }) {
               }}
             ></div>
           </div>
-          {/* Hiển thị cảnh báo nếu vượt ngân sách */}
-          {isBudgetExceeded() && <div className="text-red-500 text-sm mt-2">Cảnh báo: Bạn sắp vượt quá ngân sách!</div>}
+          {warningMessage && <div className="text-red-500 text-sm mt-2">{warningMessage}</div>}
         </div>
       </div>
     </Link>
