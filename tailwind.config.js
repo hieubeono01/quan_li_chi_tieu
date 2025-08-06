@@ -1,11 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
-    content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+	content: [
+		"./src/app/**/*.{js,ts,jsx,tsx}",
+		"./src/_components/**/*.{js,ts,jsx,tsx}",
+		"./src/_context/**/*.{js,ts,jsx,tsx}",
+		"./src/(authentication)/**/*.{js,ts,jsx,tsx}",
+		"./src/(routes)/**/*.{js,ts,jsx,tsx}",
+	],
   theme: {
   	extend: {
   		backgroundImage: {

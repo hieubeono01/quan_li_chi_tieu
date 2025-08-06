@@ -1,0 +1,20 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: alpine
+  before_script:
+    - apk update && apk add openssh git
+  script:
+    - echo "$SSH_PRIVATE_KEY" > id_rsa
+    - chmod 600 id_rsa
+    - mkdir -p ~/.ssh
+    - mv id_rsa ~/.ssh/id_rsa
+    - ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+        cd /var/www/your-folder &&
+        git pull origin main &&
+        npm install &&
+        npm run build
+        # nếu bạn dùng pm2: pm2 restart app
+      "

@@ -1,5 +1,5 @@
 // import { MISSION_STATUS, SYSTEM_MISSION } from "@/app/(mission)/components/constant";
-import { getFirebaseApp } from "../app/auth/firebase";
+import { getFirebaseApp } from "../src/app/auth/firebase";
 import { ConfirmationResult, FacebookAuthProvider, getAuth, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup, UserCredential } from "firebase/auth";
 import { getFirestore, doc, getDoc, Timestamp, setDoc, collection, query, where, getDocs } from "firebase/firestore/lite";
 // import { insertEarning } from "./historyEarning.client.service";

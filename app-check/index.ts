@@ -1,5 +1,5 @@
 import { AppCheck, initializeAppCheck, ReCaptchaEnterpriseProvider } from "@firebase/app-check";
-import { getFirebaseApp } from "../app/auth/firebase";
+import { getFirebaseApp } from "../src/app/auth/firebase";
 import { FirebaseApp } from "@firebase/app";
 
 let appCheck: AppCheck | null = null;

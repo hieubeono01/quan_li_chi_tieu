@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useRedirectParam } from "../src/lib/useRedirectParam";
-import { useAuth } from "../src/app/auth/AuthContext";
+import { useRedirectParam } from "./useRedirectParam";
+import { useAuth } from "../app/auth/AuthContext";
 
 export function useRedirect() {
   const router = useRouter();
