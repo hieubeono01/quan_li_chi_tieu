@@ -5,16 +5,28 @@ deploy:
   stage: deploy
   image: alpine
   before_script:
-    - apk update && apk add openssh git
+    - apk update && apk add openssh git nodejs npm
   script:
+    # Tạo SSH key để kết nối vào server
     - echo "$SSH_PRIVATE_KEY" > id_rsa
     - chmod 600 id_rsa
     - mkdir -p ~/.ssh
     - mv id_rsa ~/.ssh/id_rsa
+
+    # SSH vào server để deploy
     - ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
-        cd /var/www/your-folder &&
+        cd /root/HelloJob/quanlychitieu &&
+
+        echo '📥 Pull code từ GitLab...' &&
         git pull origin main &&
+
+        echo '📦 Cài đặt dependencies...' &&
         npm install &&
-        npm run build
-        # nếu bạn dùng pm2: pm2 restart app
+
+        echo '🏗️ Build project...' &&
+        npm run build &&
+
+        echo '🔁 Restart bằng screen...' &&
+        screen -S cicd -X quit || true &&
+        screen -dmS cicd npm start
       "
