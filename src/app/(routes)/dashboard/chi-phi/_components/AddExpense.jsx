@@ -73,7 +73,7 @@ function AddExpense({ budgetId, user , onExpenseAdded }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Tạo chi phí hehehe</h2>
+      <h2 className="text-lg font-semibold">Tạo chi phí</h2>
 
       <div>
         <label className="block mb-2">Đặt tên cho chi phí</label>
